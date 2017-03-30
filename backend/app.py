@@ -4,12 +4,14 @@ import cloudinary
 import cloudinary.uploader
 import cloudinary.api
 from flask import Flask
+from flask.ext.cors import CORS
 cloudinary.config( 
   cloud_name = "kjh707", 
   api_key = "294731653526325", 
-  api_secret = "XdEkW_0LTsf52PZPyhG3vn-P1YAa" 
+  api_secret = "XdEkW_0LTsf52PZPyhG3vn-P1YA" 
 )
 app = Flask(__name__)
+CORS(app)
 
 @app.route('/')
 def hello_world():
