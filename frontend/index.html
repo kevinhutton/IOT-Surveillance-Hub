@@ -1,35 +1,19 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>Danger Zone - Raspberry PI Camera</title>
-  <style>
-  img {
-    height: 100px;
-    float: left;
-  }
-  </style>
-  <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+    <meta charset="utf-8">
+    <meta name="viewport", content="width=device-width, initial-scale=1.0">
+    <link href="static/main.css" rel="stylesheet">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="js/main.js"></script>
+    <title>IOT Raspberry Pi Camera</title>
 </head>
 <body>
-hello
+    <div class="container">
+    <div class="row" id="header"><h1>IOT Raspberry Pi Camera</h1></div>
+    <div class="row" id="most-recent-photo"></div>
+    <div class="row" id="control-panel"><button id="take-picture-button">Take Picture</button></div>
 
-<div id="images"></div>
-
-<script>
-(function() {
-  var backendAPI = "https://797f657870.dataplicity.io/admin/take_picture";
-  $.getJSON( backendAPI, {
-    format: "json",
-  })
-    .done(function( data ) {
-
-        console.log(data);
-        $( "<img>" ).attr( "src", data.url ).appendTo( "#images" );
-
-    });
-})();
-</script>
-
+    </div>
 </body>
 </html>

@@ -1,0 +1,52 @@
+@import  "https://fonts.googleapis.com/css?family=Roboto";
+
+/* Set font and padding for whole document */
+
+html,body,header {
+    margin: 0;
+    padding: 5px;
+    font-family: 'Roboto',sans-serif;
+}
+
+/* Prevent images from going over boundaries */
+
+img {
+    max-width: 100%;
+}
+
+/* Flexbox container */
+
+.container {
+    display: flex;
+    flex-wrap: wrap;
+    width: 100%;
+}
+
+/* Header */
+
+.row {
+    border-style: solid;
+    width: 100%;
+    box-sizing: border-box;
+    text-align: center;
+    margin: auto;
+    min-height: 100px;
+}
+.column {
+
+    width: 20%;
+    border-style: solid;
+
+ }
+
+
+
+
+/* If viewport is less than 1030px , display one work item per row for
+   easier reading */
+
+@media screen and (max-width: 1029px) {
+    .featured-work-item {
+        width: 100%;
+    }
+}
