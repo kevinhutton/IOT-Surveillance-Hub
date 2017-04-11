@@ -1,0 +1,21 @@
+body {
+    /* push the body down away from the navbar */
+    padding-top: 50px;
+    background: #e2e1e0;
+}
+
+#control-panel {
+    margin: 2em;
+}
+
+.photo-wrapper {
+    border-radius: 2px;
+    display: inline-block;
+    margin: 1rem;
+    transition: all 2.3s cubic-bezier(.25,.8,.25,1);
+    box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
+}
+
+.photo-wrapper-shadow {
+    box-shadow: 0 3px 6px rgba(0,0,0,0.50), 0 3px 6px rgba(0,0,0,0.28);
+}
