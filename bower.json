@@ -1,0 +1,11 @@
+{
+  "name": "iot-297-camera-project",
+  "version": "1.0",
+  "private": true,
+  "dependencies": {
+    "bootstrap": "~3.3",
+    "jquery": "~3.2",
+    "lodash": "~3.10",
+    "animate.css": "^3.5.2"
+  }
+}
