@@ -11,7 +11,7 @@ cloudinary.config(
   api_secret = "XdEkW_0LTsf52PZPyhG3vn-P1YA" 
 )
 app = Flask(__name__)
-CORS(app)
+cors = CORS(app, resources={r"/*": {"origins": "*"}})
 
 @app.route('/')
 def hello_world():
