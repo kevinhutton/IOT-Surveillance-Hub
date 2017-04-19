@@ -26,4 +26,4 @@ rsort($matchingFiles);
 $results = array_slice($matchingFiles, 0, $limit);
 
 
-echo json_encode(array_map($toFileDataEntry, $matchingFiles));
+echo json_encode(array_map($toFileDataEntry, $results));
