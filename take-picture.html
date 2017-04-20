@@ -23,10 +23,10 @@
                 <a class="navbar-brand" href="#">IOT Raspberry Pi Camera</a>
             </div>
             <div id="navbar" class="collapse navbar-collapse">
-                <ul class="nav navbar-nav">
-                    <li><a href="take-picture.html">Take Picture</a></li>
-                    <li><a href="live.html">Live</a></li>
-                    <li><a href="notifications.html">Notifications</a></li>
+                <ul class="nav navbar-nav " role="tablist">
+                    <li role="presentation"><a href="#take-picture" aria-controls="take-picture" role="tab" data-toggle="tab">Take Picture</a></li>
+                    <li role="presentation"><a href="#live" aria-controls="take-picture" role="tab" data-toggle="tab">Live</a></li>
+                    <li role="presentation"><a href="#notifications" aria-controls="notifications" role="tab" data-toggle="tab">Notifications</a></li>
                 </ul>
             </div><!--/.nav-collapse -->
         </div>
@@ -36,13 +36,33 @@
         <div class="text-center">
             <h1>IOT Raspberry Pi Camera</h1>
 
-            <div id="control-panel">
-                <button class="btn btn-primary" id="take-picture-button">Take Picture</button>
+            <!-- Tab panes -->
+            <div class="tab-content">
+                <div role="tabpanel" class="tab-pane active" id="take-picture">
+                    <div id="control-panel">
+                        <button class="btn btn-primary" id="take-picture-button">Take Picture</button>
+                    </div>
+
+                    <div class="photo-wrapper">
+                        <div id="most-recent-photo"></div>
+                    </div>
+                </div>
+                <div role="tabpanel" class="tab-pane" id="live">
+                    <div>
+                        <button class="btn btn-success" id="start-live-stream">Start Stream</button>
+                        <button class="btn btn-danger" id="stop-live-stream">Stop Stream</button>
+                    </div>
+
+                    <div class="photo-wrapper">
+                        <div class="most-recent-photo"></div>
+                    </div>
+                </div>
+                <div role="tabpanel" class="tab-pane" id="notifications">
+                    notif
+                </div>
             </div>
 
-            <div class="photo-wrapper">
-                <div id="most-recent-photo"></div>
-            </div>
+
         </div>
     </div>
 
@@ -52,34 +72,84 @@
     <script src="bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
     <script src="js/main.js"></script>
 <script>
-    $(function () {
-        // For now for testing, we load the latest pic.
-        $.get({
-            url: "http://104.233.111.80/file-store/search.php?limit=1"
-        }).then(function getLatestFileSuccess(files) {
-            if (!files || !files.length) {
-                return;
+var piCam = window.piCam || {};
+piCam.piHost = "http://localhost";
+//piCam.piHost = "";
+</script>
+
+    <script>
+        $(function () {
+            var $ctx = $('#live');
+            var numPics = 5;
+            var millisDelayBetweenPics = 800;
+            var streamName = "live-stream1";
+            var intervalId;
+
+            function startContinuousLoadingOfLatestPic() {
+                intervalId = setInterval(loadLatestPic, millisDelayBetweenPics);
             }
 
-            // Preload the image so we don't slide it in before it's ready.
-            var url = files[0].url;
-            var img = new Image();
-            img.onload = function () {
-                // Make the img elem.
-                $("<img>")
-                    .attr("src", url)
-                    .appendTo("#most-recent-photo");
+            function stopContinuousLoadingOfLatestPic() {
+                intervalId && clearInterval(intervalId);
+                intervalId = undefined;
+            }
 
-                // Slide it in, and once it's done sliding, add more shadow.
-                $(".photo-wrapper")
-                    .animateCss("fadeInUp")
-                    .then(function(animName, elem) {
-                        $(elem).addClass("photo-wrapper-shadow");
-                    });
-            };
-            img.src = url;
+            function loadLatestPic(doAnimationEffect) {
+                $.get({
+                    url: "http://104.233.111.80/file-store/search.php",
+                    data: {
+                        limit: 1,
+                        streamName: streamName
+                    }
+                }).then(function getLatestFileNameSuccess(files) {
+                    if (!files || !files.length) {
+                        return;
+                    }
+
+                    // Preload the image so we don't slide it in before it's ready.
+                    var url = files[0].url;
+                    var img = new Image();
+                    img.onload = function () {
+                        // Make the img elem.
+                        var $img = $("<img>").attr("src", url);
+
+                        $(".most-recent-photo", $ctx).empty().append($img);
+
+                        if (doAnimationEffect) {
+                            // Slide it in, and once it's done sliding, add more shadow.
+                            $(".photo-wrapper", $ctx)
+                                .animateCss("fadeInUp")
+                                .then(function(animName, elem) {
+                                    $(elem).addClass("photo-wrapper-shadow");
+                                });
+                        }
+                    };
+                    img.src = url;
+                });
+            }
+
+            $('#start-live-stream').click(function() {
+                startContinuousLoadingOfLatestPic();
+                $.get({
+                    url: piCam.piHost + "/admin/start_picture_stream",
+                    data: {
+                        numPics: numPics,
+                        millisDelayBetweenPics: millisDelayBetweenPics,
+                        streamName: streamName
+                    }
+                });
+            });
+
+            $('#stop-live-stream').click(function() {
+                stopContinuousLoadingOfLatestPic();
+                $.get({
+                    url: piCam.piHost + "/admin/stop_picture_stream",
+                    data: {
+                        streamName: streamName
+                    }
+                });
+            });
         });
-    });
-</script>
+    </script>
 </body>
 </html>
