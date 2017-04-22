@@ -21,8 +21,8 @@ def index():
     return 'IOT Surveillance Hub Backend API'
 @app.route('/admin/take_picture',methods=['GET','POST'])
 def take_picture():
-    filename = "pictures/cam.jpg"
-    os.system("raspistill -o %s" % filename)
+    filename = "/tmp/cam.jpg"
+    os.system("raspistill -hf -o %s" % filename)
     jsonResponse = cloudinary.uploader.upload(filename)
     return json.dumps(jsonResponse)
 
