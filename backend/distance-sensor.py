@@ -2,9 +2,10 @@
 import sys
 import RPi.GPIO as GPIO
 import time
+import traceback
+import common
 
 try:
-    loopcount = 0
     # Use broadcom numbering system
     GPIO.setmode(GPIO.BCM)
     # Label GPIO pins used on breadboard.
@@ -23,6 +24,8 @@ try:
     time.sleep(2)
 
     # Send a pulse for 10 microseconds.
+    counter = 5
+    total = 0
 
     while True:
         # Send 1 signal and then stop
@@ -48,13 +51,24 @@ try:
 
         # Round out distance
         distance = round(distance, 2)
-        loopcount += 1
         print("Object Detected")
         print("Distance:", distance, "cm")
+        counter = counter - 1
+        total = total + distance
+        if counter == 0:
+            counter = 5
+            average = total / counter
+            total = 0
+            print "Average distance of last %s readings: %s" % (counter, average)
+            if average >= 92 and average <= 193:
+                print "Object detected within 92-193 cm ! Taking picture"
+                common.take_picture()
+                time.sleep(5)
         time.sleep(1)
 
 except:
     print "Program Interupted!"
+    traceback.print_exc()
 finally:
     print "Cleanup GPIO pins"
     GPIO.cleanup()
