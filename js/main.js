@@ -1,3 +1,4 @@
+var piCam = window.piCam || {};
 
 $(document).ready(function(){
     console.log("Page Loaded");
@@ -13,13 +14,19 @@ $(document).ready(function(){
 });
 
 
-// Add "active" class to nav link that matches current url.
-$(function () {
-    var pathName = window.location.pathname;
+$(function enableBookmarkingOfTabs() {
+    // When the page loads, show the right tab (if there's a url hash for a tab).
+    var hash = window.location.hash;
     $(".nav a").each(function () {
-        if (_.includes(pathName, $(this).attr("href"))) {
-            $(this).closest("li").addClass("active");
+        if ($(this).attr("href") === hash) {
+            $(this).click();
         }
+    });
+
+    // Update the hash in the url when a nav link is clicked.
+    // This enabled bookmarking and reloading the page into the desired tab.
+    $(".nav a").on("click", function() {
+        location.href = $(this).attr("href");
     });
 });
 
@@ -33,4 +40,9 @@ $.fn.extend({
         });
         return dfd;
     }
+});
+
+$(function initTooltips() {
+   $("[data-toggle=tooltip]").tooltip();
+   $("[data-toggle=popover]").popover();
 });
