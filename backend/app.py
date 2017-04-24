@@ -7,7 +7,7 @@ import urllib2
 import common
 import requests
 from flask import Flask,abort,request
-from flask.ext.cors import CORS
+from flask_cors import CORS
 app = Flask(__name__)
 cors = CORS(app, resources={r"/*": {"origins": "*"}})
 
@@ -70,11 +70,11 @@ def uploadFile(filename):
 @app.route('/admin/geolocation',methods=['GET','POST'])
 def geolocation():
     try:
-	response = urllib2.urlopen('http://ip-api.com/json')
-	data = json.load(response)
-	return json.dumps(data)
+        response = urllib2.urlopen('http://ip-api.com/json')
+        data = json.load(response)
+        return json.dumps(data)
     except:
-	abort(404)
+        abort(404)
 
 if __name__ == '__main__':
     app.debug = True
