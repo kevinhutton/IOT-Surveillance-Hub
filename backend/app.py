@@ -1,32 +1,25 @@
+#IOT Surveillance Hub Backend
+
 import os
 import time
 import json
+import urllib2
+import common
 import requests
-import cloudinary
-import cloudinary.uploader
-import cloudinary.api
-from flask import Flask, request
+from flask import Flask,abort,request
 from flask.ext.cors import CORS
-from pprint import pprint
-cloudinary.config( 
-  cloud_name = "kjh707", 
-  api_key = "294731653526325", 
-  api_secret = "XdEkW_0LTsf52PZPyhG3vn-P1YA" 
-)
 app = Flask(__name__)
 cors = CORS(app, resources={r"/*": {"origins": "*"}})
 
 liveStreamRunState = {}
 
 @app.route('/')
-def hello_world():
-    return 'Hello, World!'
+def index():
+    return 'IOT Surveillance Hub Backend API'
+
 @app.route('/admin/take_picture',methods=['GET','POST'])
 def take_picture():
-    filename = "pictures/cam.jpg"
-    os.system("raspistill -o %s" % filename)
-    jsonResponse = cloudinary.uploader.upload(filename)
-    return json.dumps(jsonResponse)
+    return common.take_picture()
 
 # Takes pictures in a loop, uploading them as theyre taken.
 # The loop stops 2 ways. 1) we hit the numPics limit. 2) a request is made to the /stop_picture_stream url by another http request
@@ -73,9 +66,17 @@ def uploadFile(filename):
     resp = requests.post(url, files=files)
     return resp.status_code
 
+# Determine the approxmate coordinates of this device via IP Gelocation
+@app.route('/admin/geolocation',methods=['GET','POST'])
+def geolocation():
+    try:
+	response = urllib2.urlopen('http://ip-api.com/json')
+	data = json.load(response)
+	return json.dumps(data)
+    except:
+	abort(404)
 
 if __name__ == '__main__':
-    # Secret key to encrypt session variables
     app.debug = True
     app.run(port=80)
 
