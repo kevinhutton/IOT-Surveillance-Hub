@@ -1,12 +1,15 @@
 #IOT Surveillance Hub Backend
 
 import os
+import sys
 import time
 import json
+import sqlite3
 import urllib2
+import traceback
 import common
 import requests
-from flask import Flask,abort,request
+from flask import Flask,abort,request,redirect
 from flask_cors import CORS
 app = Flask(__name__)
 cors = CORS(app, resources={r"/*": {"origins": "*"}})
@@ -75,6 +78,57 @@ def geolocation():
         return json.dumps(data)
     except:
         abort(404)
+
+
+@app.route('/admin/init_db',methods=['GET','POST'])
+def initDb():
+    common.initDb()
+    return "ok"
+
+@app.route('/api/notification-records',methods=['GET'])
+def listNotificationRecords():
+    records = common.getAllNotificationRecords()
+
+    return json.dumps(records)
+
+@app.route('/api/notification-records',methods=['POST'])
+def createNotificationRecord():
+    # recordId = common.createNotificationRecord(
+    #     request.form.get("email"),
+    #     request.form.get("startDate"),
+    #     request.form.get("endDate"),
+    #     request.form.get("dailyStartTime"),
+    #     request.form.get("dailyEndTime"),
+    #     request.form.get("throttleMinutes")
+    # )
+    try:
+        common.log('pre')
+        recordId = common.createNotificationRecord(
+            request.form.get("email"),
+            request.form.get("startDate"),
+            request.form.get("endDate"),
+            request.form.get("dailyStartTime"),
+            request.form.get("dailyEndTime"),
+            request.form.get("throttleMinutes")
+        )
+        return json.dumps({'id': 55})
+    except Exception, e:
+        print >> sys.stderr, traceback.format_exc()
+        common.log("Unexpected error: %s" % e.message)
+        return ""
+
+@app.route('/api/notification-records/<id>',methods=['PUT'])
+def updateNotificationRecord(id):
+    if request.form.has_key("disabled"):
+        common.updateNotificationRecord(id, request.form.get("disabled"))
+
+    return json.dumps({'success': True})
+
+@app.route('/api/notification-records/<id>',methods=['DELETE'])
+def deleteNotificationRecord(id):
+    common.deleteNotificationRecord(id)
+    return json.dumps({'success': True})
+
 
 if __name__ == '__main__':
     app.debug = True

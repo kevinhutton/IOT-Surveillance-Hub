@@ -139,8 +139,9 @@
                     <hr>
 
 
-                    <div>
-                        <h1>Existing Notification Records</h1>
+                    <div class="existing-notification-record-wrapper">
+                        <h3 class="text-left">Existing Notification Records</h3>
+
                         <table class="table table-striped table-hover existing-notification-records">
                             <thead>
                             <tr>
@@ -169,16 +170,28 @@
         </div>
     </div>
 
+
+
     <script type="text/lodash-template" id="existing-notification-record-row-tpl">
         <tr>
             <th><%- email %></th>
             <th><%- throttleMinutes %></th>
-            <th><%- startDateTime %></th>
-            <th><%- endDateTime %></th>
+            <th><%- startDate %></th>
+            <th><%- endDate %></th>
             <th><%- dailyStartTime %></th>
             <th><%- dailyEndTime %></th>
             <th><button class="btn btn-danger delete-record" data-record-id="<%- id %>">Delete</button></th>
-            <th><button class="btn btn-warning stfu" data-record-id="<%- id %>">STFU <span class="stfu-state"><%- stfuState %></span></button></th>
+            <th>
+                <div class="btn-group" data-toggle="buttons">
+                    <label class="btn <%- stfuBtnClass %> <%- stfuEnabled %>">
+                        <input type="radio" class="stfu-enabled-button" name="stfu-<%- id %>" value="1" data-record-id="<%- id %>"> <small>On</small>
+                    </label>
+
+                    <label class="btn <%- stfuBtnClass %> <%- stfuDisabled %> disabled-button">
+                        <input type="radio" name="stfu-<%- id %>" value="0" data-record-id="<%- id %>"> <small>Off</small>
+                    </label>
+                </div>
+            </th>
         </tr>
     </script>
 
@@ -191,16 +204,7 @@
     <script src="js/main.js"></script>
     <script src="js/live-tab.js"></script>
     <script src="js/notifications-tab.js"></script>
-<script>
-var piCam = window.piCam || {};
-piCam.piHost = "http://localhost";
-//piCam.piHost = "";
-</script>
 
-    <script>
-        $(function () {
 
-        });
-    </script>
 </body>
 </html>
