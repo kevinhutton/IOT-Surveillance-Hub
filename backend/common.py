@@ -3,6 +3,8 @@ import json
 import sys
 import urllib2
 import traceback
+import smtplib
+from pprint import pprint
 import cloudinary
 import cloudinary.uploader
 import cloudinary.api
@@ -17,7 +19,7 @@ cloudinary.config(
 )
 # dbLocation = 'iot-project.db'
 dbLocation = '/var/lib/iot-project/iot-project.db'
-
+mockEmailSend = True
 
 def take_picture(tag=None):
     tmpFile = NamedTemporaryFile()
@@ -72,8 +74,13 @@ def createNotificationsTable():
     print "Index created successfully"
     conn.close()
 
-def dropAllTables():
+def getConnection():
     conn = sqlite3.connect(dbLocation)
+    conn.row_factory = dict_factory
+    return conn
+
+def dropAllTables():
+    conn = getConnection()
     cur = conn.cursor()
     tables = list(cur.execute("select name from sqlite_master where type is 'table'"))
     cur.executescript(';'.join(["drop table if exists %s" %i for i in tables]))
@@ -86,9 +93,29 @@ def initDb():
     createNotificationsTable()
 
 def query(queryString):
-    conn = sqlite3.connect(dbLocation)
-    conn.row_factory = dict_factory
+    conn = getConnection()
     c = conn.execute(queryString)
+    result = c.fetchall()
+    conn.commit()
+    conn.close()
+    return result
+
+def executeWithArgs(sql, args=None):
+    conn = getConnection()
+    if args == None:
+        c = conn.execute(sql)
+    else:
+        c = conn.execute(sql, args)
+    conn.commit()
+    conn.close()
+    return c.lastrowid
+
+def selectAllWithArgs(sql, args=None):
+    conn = getConnection()
+    if args == None:
+        c = conn.execute(sql)
+    else:
+        c = conn.execute(sql, args)
     result = c.fetchall()
     conn.commit()
     conn.close()
@@ -100,64 +127,109 @@ def getAllNotificationRecords():
           from Notifications
     """
 
-    return query(sql)
+    return selectAllWithArgs(sql)
 
 def getCurrentlyActiveNotificationRecords():
+    # We store the dates and times in local time.
     sql = """
-        select rowid, *
+        select rowid, CURRENT_TIMESTAMP dt, strftime('%H:%M', DATETIME(CURRENT_TIMESTAMP, 'LOCALTIME')) lt, *
           from Notifications
-         where (startDate      is null or startDate >= CURRENT_TIMESTAMP)
-           and (endDate        is null or endDate <= CURRENT_TIMESTAMP)
-           and (dailyStartTime is null or dailyStartTime >= strftime('%H:%M', CURRENT_TIMESTAMP))
-           and (dailyEndTime   is null or dailyEndTime <= strftime('%H:%M', CURRENT_TIMESTAMP))
+         where (startDate      = '' or startDate      <= DATETIME(CURRENT_TIMESTAMP, 'LOCALTIME'))
+           and (endDate        = '' or endDate        >= DATETIME(CURRENT_TIMESTAMP, 'LOCALTIME'))
+           and (dailyStartTime = '' or dailyStartTime <= strftime('%H:%M', DATETIME(CURRENT_TIMESTAMP, 'LOCALTIME')))
+           and (dailyEndTime   = '' or dailyEndTime   >= strftime('%H:%M', DATETIME(CURRENT_TIMESTAMP, 'LOCALTIME')))
+           and disabled = 0
     """
-    return query(sql)
+
+    # We only return 1 record per user, because a user might have some temporarily overlapping notification records setup.
+    # It should be the one with the smallest throttleMinutes value.
+    noDupeDict = {}
+    for row in selectAllWithArgs(sql):
+        if not row['email'] in noDupeDict or noDupeDict[row['email']]['throttleMinutes'] < row['throttleMinutes']:
+            noDupeDict[row['email']] = row
+
+    noDupeList = []
+    for k in noDupeDict.keys():
+        noDupeList.append(noDupeDict[k])
+
+    return noDupeList
 
 def createNotificationRecord(email, startDate, endDate, dailyStartTime, dailyEndTime, throttleMinutes):
-    conn = sqlite3.connect(dbLocation)
-    log('open')
     sql = """
-    insert into Notifications 
-    (email, startDate, endDate, dailyStartTime, dailyEndTime, throttleMinutes, disabled)
+    insert 
+      into Notifications 
+           (email, startDate, endDate, dailyStartTime, dailyEndTime, throttleMinutes, disabled)
     values 
-    (?, ?, ?, ?, ?, ?, 0)
+           (?, ?, ?, ?, ?, ?, 0)
     """
-    # c = conn.execute(sql, ("", "", "", "", "", "11"))
-    c = conn.execute(sql, (email, startDate, endDate, dailyStartTime, dailyEndTime, throttleMinutes))
-    log( "exec")
 
-    conn.commit()
-    conn.close()
-    log(str(c.lastrowid))
-
-    return c.lastrowid
+    return executeWithArgs(sql, (email, startDate, endDate, dailyStartTime, dailyEndTime, throttleMinutes))
 
 def updateNotificationRecord(id, disabled):
-    conn = sqlite3.connect(dbLocation)
     sql = """
     update Notifications 
-      set disabled = ?
-    where rowid = ?
+       set disabled = ?
+     where rowid = ?
     """
-    c = conn.execute(sql, (disabled, id))
-    conn.commit()
-    conn.close()
+
+    return executeWithArgs(sql, (disabled, id))
 
 def deleteNotificationRecord(id):
-    conn = sqlite3.connect(dbLocation)
     sql = """
     delete 
       from Notifications 
      where rowid = ?
     """
-    c = conn.execute(sql, (id))
-    conn.commit()
-    conn.close()
+
+    executeWithArgs(sql, (id,))
 
 def log(msg):
     sys.stdout.write(msg)
     sys.stdout.write("\n")
     sys.stdout.flush()
+
+def recordEmailSent(email):
+    sql = """
+    insert into NotificationHistory 
+    (email, dateSent)
+    values 
+    (?, CURRENT_TIMESTAMP)
+    """
+
+    return executeWithArgs(sql, (email,))
+
+def sendNotificationEmail(email):
+    if mockEmailSend:
+        log("pretending to send email to: " + email)
+        return True
+    else:
+        sender = 'iot-camera-activity-notifier-no-reply@example.com'
+        receivers = [email]
+
+        message = """
+        Camera activity detected
+        """
+        smtpObj = smtplib.SMTP('localhost')
+        return smtpObj.sendmail(sender, receivers, message)
+
+def emailHasNotBeenEmailedTooRecently(email, minimumMinutes):
+    sql = """
+    select count(*) cnt
+      from NotificationHistory 
+     where email = ?
+       and dateSent > datetime('now', '-%d Minute')
+    """ % minimumMinutes
+
+    return selectAllWithArgs(sql, (email,))[0]['cnt'] == 0
+
+# We can call this method whenever the camera detects activity. It will send any needed notifications.
+def notifySubscribersOfCameraActivity():
+    for row in getCurrentlyActiveNotificationRecords():
+        pprint(row)
+        log("")
+        if emailHasNotBeenEmailedTooRecently(row['email'], row['throttleMinutes']):
+            if sendNotificationEmail(row['email']):
+                recordEmailSent(row['email'])
 
 def dict_factory(cursor, row):
     d = {}

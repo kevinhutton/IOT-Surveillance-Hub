@@ -7,6 +7,7 @@ import json
 import sqlite3
 import urllib2
 import traceback
+from pprint import pprint
 import common
 import requests
 from flask import Flask,abort,request,redirect
@@ -93,29 +94,15 @@ def listNotificationRecords():
 
 @app.route('/api/notification-records',methods=['POST'])
 def createNotificationRecord():
-    # recordId = common.createNotificationRecord(
-    #     request.form.get("email"),
-    #     request.form.get("startDate"),
-    #     request.form.get("endDate"),
-    #     request.form.get("dailyStartTime"),
-    #     request.form.get("dailyEndTime"),
-    #     request.form.get("throttleMinutes")
-    # )
-    try:
-        common.log('pre')
-        recordId = common.createNotificationRecord(
-            request.form.get("email"),
-            request.form.get("startDate"),
-            request.form.get("endDate"),
-            request.form.get("dailyStartTime"),
-            request.form.get("dailyEndTime"),
-            request.form.get("throttleMinutes")
-        )
-        return json.dumps({'id': 55})
-    except Exception, e:
-        print >> sys.stderr, traceback.format_exc()
-        common.log("Unexpected error: %s" % e.message)
-        return ""
+    recordId = common.createNotificationRecord(
+        request.form.get("email"),
+        request.form.get("startDate"),
+        request.form.get("endDate"),
+        request.form.get("dailyStartTime"),
+        request.form.get("dailyEndTime"),
+        request.form.get("throttleMinutes")
+    )
+    return json.dumps({'id': recordId})
 
 @app.route('/api/notification-records/<id>',methods=['PUT'])
 def updateNotificationRecord(id):
@@ -127,6 +114,21 @@ def updateNotificationRecord(id):
 @app.route('/api/notification-records/<id>',methods=['DELETE'])
 def deleteNotificationRecord(id):
     common.deleteNotificationRecord(id)
+    return json.dumps({'success': True})
+
+@app.route('/admin/tttt',methods=['GET'])
+def tttt():
+    sql = """
+        select CURRENT_TIMESTAMP dt, 
+        DATETIME(CURRENT_TIMESTAMP, 'LOCALTIME') ldt, 
+        strftime('%H:%M', DATETIME(CURRENT_TIMESTAMP, 'LOCALTIME')) lt, 
+        *
+          from Notifications
+    """
+    # for r in common.query(sql):
+    #     pprint(r)
+    # common.log("")
+    common.notifySubscribersOfCameraActivity()
     return json.dumps({'success': True})
 
 
