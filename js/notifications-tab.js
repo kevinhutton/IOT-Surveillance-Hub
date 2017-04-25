@@ -4,7 +4,17 @@ $(function setupNotificationsTabBehavior() {
         createNewNotificationRecord();
     });
 
-    var mockRecords = [{id: 1, email: "foo@bar.com"}];
+    $("body").on("click", ".delete-record", function deleteButtonHandler() {
+        var rowId = $(this).data("record-id");
+        deleteNotificationRecord(rowId);
+    });
+
+    $("body").on("change", "[name^='stfu-']", _.debounce(function stfuButtonHandler() {
+        var rowId = $(this).data("record-id");
+        var disabled = $(this).is(":checked") && $(this).is(".stfu-enabled-button") ? 0 : 1;
+        updateNotificationRecord(rowId, disabled);
+    }, 20));
+
     function getDateObject(pickerElem) {
         var $pickerElem = $(pickerElem);
         // Detect empty input field.
@@ -16,8 +26,12 @@ $(function setupNotificationsTabBehavior() {
         return $pickerElem.data("DateTimePicker").date();
     }
 
-    function formatDateObject(momentDate) {
+    function formatDateObjectToIso(momentDate) {
         return momentDate && momentDate.toISOString();
+    }
+
+    function formatDateObjectTo24Time(momentDate) {
+        return momentDate && momentDate.format("HH:mm");
     }
 
     function getFormData() {
@@ -31,51 +45,83 @@ $(function setupNotificationsTabBehavior() {
         return {
             email: email,
             throttleMinutes: throttleMinutes,
-            startDate: formatDateObject(startDate),
-            endDate: formatDateObject(endDate),
-            dailyStartTime: formatDateObject(dailyStartTime),
-            dailyEndTime: formatDateObject(dailyEndTime)
+            startDate: formatDateObjectToIso(startDate),
+            endDate: formatDateObjectToIso(endDate),
+            dailyStartTime: formatDateObjectTo24Time(dailyStartTime),
+            dailyEndTime: formatDateObjectTo24Time(dailyEndTime)
         };
     }
 
     function createNewNotificationRecord() {
         var data = getFormData();
         $.post({
-            url: "/api/notification-records",
+            url: piCam.piHost + "/api/notification-records",
             data: data
         }).then(function() {
             window.location.reload();
         });
     }
 
-//            function getExistingNotificationRecords() {
-//                return $.get({
-//                    url: "/admin/notification-records",
-//                    dataType: "json"
-//                });
-//            }
+    function updateNotificationRecord(id, disabled) {
+        $.ajax({
+            url: piCam.piHost + "/api/notification-records/" + encodeURIComponent(id),
+            method: "PUT",
+            data: {disabled: disabled}
+        }).then(function() {
+            window.location.reload();
+        });
+    }
+
+    function deleteNotificationRecord(id) {
+        var data = getFormData();
+        $.ajax({
+            url: piCam.piHost + "/api/notification-records/" + encodeURIComponent(id),
+            method: "DELETE"
+        }).then(function() {
+            window.location.reload();
+        });
+    }
 
     function getExistingNotificationRecords() {
-        return new Promise(function(resolve, reject) {
-            setTimeout(function() {
-                resolve(mockRecords);
-            }, 250);
-        });
+       return $.get({
+           url: piCam.piHost + "/api/notification-records",
+           dataType: "json"
+       });
+    }
+
+    function toLocalDateTime(dateStr) {
+        if (!dateStr) {
+            return "";
+        }
+        return moment(dateStr).format("YYYY-MM-DD HH:mm:ss");
+    }
+
+    function to12HourTime(timeStr) {
+        if (!timeStr) {
+            return "";
+        }
+        var match = timeStr.match(/(\d{2}):(\d{2})/);
+        var hrs24 = match[1];
+        var minutes = match[2];
+        var hrs12 = hrs24 % 12;
+        var amPm = hrs24 > 12 ? " pm" : "  am";
+        return hrs12 + ":" + minutes + amPm;
     }
 
     function renderExistingNotificationRecords(records) {
         var rowTpl = _.template($("#existing-notification-record-row-tpl").text());
         var html = records.map(function(record) {
             return rowTpl({
-                id: record.id,
+                id: record.rowid,
                 email: record.email,
-                throttleMinutes: 22,
-                startDateTime: 22,
-                endDateTime: 22,
-                dailyStartTime: 22,
-                dailyEndTime: 22,
-                dailyEndTime: 22,
-                stfuState: "on"
+                throttleMinutes: record.throttleMinutes,
+                startDate: toLocalDateTime(record.startDate),
+                endDate: toLocalDateTime(record.endDate) || "\u221E",
+                dailyStartTime: to12HourTime(record.dailyStartTime),
+                dailyEndTime: to12HourTime(record.dailyEndTime),
+                stfuBtnClass: record.disabled === 1 ? "btn-warning" : "btn-success",
+                stfuEnabled: record.disabled === 0 ? "active" : "",
+                stfuDisabled: record.disabled === 1 ? "active" : "",
             });
         });
 
@@ -83,4 +129,11 @@ $(function setupNotificationsTabBehavior() {
     }
 
     getExistingNotificationRecords().then(renderExistingNotificationRecords);
+});
+
+$(function initDatePickers() {
+    $(".datetime-picker").datetimepicker();
+    $(".time-picker").datetimepicker({
+        format: 'LT'
+    });
 });

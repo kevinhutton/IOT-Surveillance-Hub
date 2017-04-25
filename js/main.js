@@ -1,4 +1,6 @@
 var piCam = window.piCam || {};
+piCam.piHost = "";
+// piCam.piHost = "http://localhost";
 
 $(document).ready(function(){
     console.log("Page Loaded");
