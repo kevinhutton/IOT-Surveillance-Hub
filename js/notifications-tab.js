@@ -26,12 +26,16 @@ $(function setupNotificationsTabBehavior() {
         return $pickerElem.data("DateTimePicker").date();
     }
 
-    function formatDateObjectToIso(momentDate) {
-        return momentDate && momentDate.toISOString();
+    function formatDateObjectToSqliteDateFormat(momentDate) {
+        return momentDate && momentDate.format("YYYY-MM-DD HH:mm:ss");
     }
 
     function formatDateObjectTo24Time(momentDate) {
-        return momentDate && momentDate.format("HH:mm");
+        if (!momentDate) {
+            return null;
+        }
+
+        return momentDate.format("HH:mm");
     }
 
     function getFormData() {
@@ -45,8 +49,8 @@ $(function setupNotificationsTabBehavior() {
         return {
             email: email,
             throttleMinutes: throttleMinutes,
-            startDate: formatDateObjectToIso(startDate),
-            endDate: formatDateObjectToIso(endDate),
+            startDate: formatDateObjectToSqliteDateFormat(startDate),
+            endDate: formatDateObjectToSqliteDateFormat(endDate),
             dailyStartTime: formatDateObjectTo24Time(dailyStartTime),
             dailyEndTime: formatDateObjectTo24Time(dailyEndTime)
         };
@@ -73,7 +77,6 @@ $(function setupNotificationsTabBehavior() {
     }
 
     function deleteNotificationRecord(id) {
-        var data = getFormData();
         $.ajax({
             url: piCam.piHost + "/api/notification-records/" + encodeURIComponent(id),
             method: "DELETE"
