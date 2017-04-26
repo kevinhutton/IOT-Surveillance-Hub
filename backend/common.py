@@ -218,46 +218,17 @@ def sendNotificationEmail(email, fileName):
         log("pretending to send email to: " + email)
         return True
     else:
-        sender = 'iot-camera-activity-notifier-no-reply@example.com'
-
-        # Create message container - the correct MIME type is multipart/alternative.
-        msg = MIMEMultipart('alternative')
-        msg['Subject'] = "IOT Surveillance Hub Activity Detected"
-        msg['From'] = sender
-        msg['To'] = email
-
-        # Create the body of the message (a plain-text and an HTML version).
-        messagePlain = """
-        Camera activity detected.
-        View Camera Live: %s#live
-        View Activity Image: %s?tag=%s&submit=1#search-pictures
-        
-        """ % (urlRoot, urlRoot, urllib.quote_plus(fileName))
-
         messageHtml = """
         Camera activity detected. <br>
         <a href="%s#live">View Camera Live</a> <br>
         <a href="%s?tag=%s&submit=1#search-pictures">View Activity Image</a> <br>
         
         """ % (urlRoot, urlRoot, urllib.quote_plus(fileName))
-
-        # Record the MIME types of both parts - text/plain and text/html.
-        part1 = MIMEText(messagePlain, 'plain')
-        part2 = MIMEText(messageHtml, 'html')
-
-        # Attach parts into message container.
-        # According to RFC 2046, the last part of a multipart message, in this case
-        # the HTML message, is best and preferred.
-        msg.attach(part1)
-        msg.attach(part2)
-
-        # Send the message via local SMTP server.
-        s = smtplib.SMTP('localhost', 1025)
-        # sendmail function takes 3 arguments: sender's address, recipient's address
-        # and message to send - here it is sent as one string.
-        success = s.sendmail(sender, email, msg.as_string())
-        s.quit()
-        return success
+        sender = 'iot-camera-activity-notifier-no-reply@example.com'
+        params = {'subject': "IOT Surveillance Hub Activity Detected", 'from': sender, 'to': email, 'message': messageHtml}
+        url = 'http://104.233.111.80/file-store/email.php'
+        requests.get(url, params=params)
+        return True
 
 def emailHasNotBeenEmailedTooRecently(email, minimumMinutes):
     sql = """
