@@ -12,13 +12,21 @@ $minDateTime = isset($_GET['minDateTime']) && strlen(trim($_GET['minDateTime']))
 $maxDateTime = isset($_GET['maxDateTime']) && strlen(trim($_GET['maxDateTime'])) ? trim($_GET['maxDateTime']) : false;
 $limit = isset($_GET['limit']) ? (int) $_GET['limit'] : 1000;
 
+// The filename has a datetime string date at the front.
+// But, the date filters passed via url may not be a full date time, eg it might only be a year, or year-month etc...
+// So, we only do the comparison based on same string length.
+function cmpPartialDate($fileName, $dateTimeStr) {
+    $partialFileName = substr($fileName, 0, strlen($dateTimeStr));
+    return strcasecmp($partialFileName, $dateTimeStr);
+}
+
 $matchesFilters = function($fileName) use ($regexFilter, $filter, $minDateTime, $maxDateTime) {
     return (!$filter || false !== stripos($fileName, $filter))
         && (!$regexFilter || preg_match($regexFilter, $fileName))
-        && (!$minDateTime || $minDateTime <= $fileName)
-        && (!$maxDateTime || $maxDateTime >= $fileName)
+        && (!$minDateTime || cmpPartialDate($fileName, $minDateTime) >= 0)
+        && (!$maxDateTime || cmpPartialDate($fileName, $maxDateTime) <= 0)
         && $fileName[0] !== '.'
-    ;
+        ;
 };
 
 $toFileDataEntry = function($fileName) {
