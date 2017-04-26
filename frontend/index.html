@@ -2,18 +2,275 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport", content="width=device-width, initial-scale=1.0">
-    <link href="static/main.css" rel="stylesheet">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-    <script src="js/main.js"></script>
-    <title>IOT Raspberry Pi Camera</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="bower_components/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="bower_components/eonasdan-bootstrap-datetimepicker/build/css/bootstrap-datetimepicker.min.css" rel="stylesheet">
+    <link href="bower_components/animate.css/animate.min.css" rel="stylesheet">
+    <link href="static/base.css" rel="stylesheet">
+
+    <title>IOT Surveillance Hub</title>
 </head>
 <body>
-    <div class="container">
-    <div class="row" id="header"><h1>IOT Raspberry Pi Camera</h1></div>
-    <div class="row" id="most-recent-photo"></div>
-    <div class="row" id="control-panel"><button id="take-picture-button">Take Picture</button></div>
 
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+        <div class="container">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="#">IOT Surveillance Hub</a>
+            </div>
+            <div id="navbar" class="collapse navbar-collapse">
+                <ul class="nav navbar-nav " role="tablist">
+                    <li role="presentation"><a href="#take-picture" aria-controls="take-picture" role="tab" data-toggle="tab">Take Picture</a></li>
+                    <li role="presentation"><a href="#live" aria-controls="take-picture" role="tab" data-toggle="tab">Live</a></li>
+                    <li role="presentation"><a href="#notifications" aria-controls="notifications" role="tab" data-toggle="tab">Notifications</a></li>
+                    <li role="presentation"><a href="#search-pictures" aria-controls="search-pictures" role="tab" data-toggle="tab">Search Pictures</a></li>
+                </ul>
+            </div><!--/.nav-collapse -->
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="text-center">
+
+
+            <!-- Tab panes -->
+            <div class="tab-content">
+                <div role="tabpanel" class="tab-pane active" id="take-picture">
+                    <h1>Command the Camera To Take A Single Picture</h1>
+
+                    <div id="control-panel">
+                        <button class="btn btn-primary" id="take-picture-button">Take Picture</button>
+                    </div>
+
+                    <div class="photo-wrapper">
+                        <div id="most-recent-photo"></div>
+                    </div>
+                </div>
+                <div role="tabpanel" class="tab-pane" id="live">
+                    <h1>Watch Camera In Real Time</h1>
+
+                    <div>
+                        <button class="btn btn-success" id="start-live-stream">Start Stream</button>
+                        <button class="btn btn-danger" id="stop-live-stream">Stop Stream</button>
+                    </div>
+
+                    <div class="photo-wrapper">
+                        <div class="most-recent-photo"></div>
+                    </div>
+                </div>
+                <div role="tabpanel" class="tab-pane" id="notifications">
+
+                    <h1>Notifications</h1>
+                    <p>Get notified when the camera detects movement</p>
+
+                    <hr>
+
+                    <h3 class="text-left">Add New Notification Subscription Record</h3>
+
+                    <form class="form-horizontal create-notification-record-form">
+
+                        <div class="form-group">
+                            <label for="inputEmail" class="control-label col-sm-2">Email</label>
+                            <div class="col-sm-4">
+                                <input type="email" class="form-control" id="inputEmail" name="email" placeholder="name@domain.com" required>
+                            </div>
+                            <label for="inputThrottleMinutes" class="control-label col-sm-2" data-toggle="tooltip" title="To prevent you from getting too many notifications, you can throttle the notification emails. For example, if you enter 15, then you won't receive an email more than once per 15 minutes.">Email Throttling Minutes&nbsp;<span class="glyphicon glyphicon-info-sign"></span></label>
+                            <div class="col-sm-4">
+                                <input type="number" min="0" max="10000" class="form-control" id="inputThrottleMinutes" name="throttleMinutes" value="15" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="inputStartDate" class="control-label col-sm-2" data-toggle="tooltip" title="The date when this record will activate, potentially sending you notifications if activity is detected. Leave blank if you want it to start immediately.">Start Date&nbsp;<span class="glyphicon glyphicon-info-sign"></span></label>
+                            <div class="col-sm-4">
+                                <div class="input-group date datetime-picker" id="inputStartDateWrapper">
+                                    <input type="text" class="form-control" id="inputStartDate" name="startDate">
+                                    <span class="input-group-addon">
+                                        <span class="glyphicon glyphicon-calendar"></span>
+                                    </span>
+                                </div>
+                            </div>
+                            <label for="inputEndDate" class="control-label col-sm-2" data-toggle="tooltip" title="The date when this record will deactivate, no longer sending you notifications. Leave blank if you want it to never end.">End Date&nbsp;<span class="glyphicon glyphicon-info-sign"></span></label>
+                            <div class="col-sm-4">
+                                <div class="input-group date datetime-picker" id="inputEndDateWrapper">
+                                    <input type="text" class="form-control" id="inputEndDate" name="endDate">
+                                    <span class="input-group-addon">
+                                        <span class="glyphicon glyphicon-calendar"></span>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="inputDailyStartTime" class="control-label col-sm-2" data-toggle="tooltip" title="The time of day this notification activates. For example, you can make it so you only receive notifications between 2 and 7 pm. ">Daily Start Time&nbsp;<span class="glyphicon glyphicon-info-sign"></span></label>
+                            <div class="col-sm-4">
+                                <div class="input-group date time-picker" id="inputDailyStartTimeWrapper">
+                                    <input type="text" class="form-control" id="inputDailyStartTime" name="dailyStartTime">
+                                    <span class="input-group-addon">
+                                        <span class="glyphicon glyphicon-time"></span>
+                                    </span>
+                                </div>
+                            </div>
+                            <label for="inputDailyEndTime" class="control-label col-sm-2" data-toggle="tooltip" title="The time of day this notification deactivates. For example, you can make it so you only receive notifications between 2 and 7 pm.">Daily End Time&nbsp;<span class="glyphicon glyphicon-info-sign"></span></label>
+                            <div class="col-sm-4">
+                                <div class="input-group date time-picker" id="inputDailyEndTimeWrapper">
+                                    <input type="text" class="form-control" id="inputDailyEndTime" name="dailyEndTime">
+                                    <span class="input-group-addon">
+                                        <span class="glyphicon glyphicon-time"></span>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <div class="form-group">
+                            <div class="col-sm-4">
+                                <button class="btn btn-primary">Create</button>
+                            </div>
+                        </div>
+                    </form>
+
+                    <hr>
+
+
+                    <div class="existing-notification-record-wrapper">
+                        <h3 class="text-left">Existing Notification Records</h3>
+
+                        <table class="table table-striped table-hover existing-notification-records">
+                            <thead>
+                            <tr>
+                                <th>Email</th>
+                                <th data-toggle="tooltip" title="Don't send emails more than once per this many minutes">Throttle Minutes&nbsp;<span class="glyphicon glyphicon-info-sign"></span></th>
+                                <th>Start Date</th>
+                                <th>End Date</th>
+                                <th>Daily Start Time</th>
+                                <th>Daily End Time</th>
+                                <th>Delete</th>
+                                <th data-toggle="tooltip" title="Stop The Frequent Updates / Suspend Emails">STFU&nbsp;<span class="glyphicon glyphicon-info-sign"></span></th>
+                            </tr>
+                            </thead>
+                            <tbody>
+
+                            </tbody>
+                        </table>
+                    </div>
+
+
+                </div> <!-- end tab content -->
+
+                <div role="tabpanel" class="tab-pane" id="search-pictures">
+                    <h1>Search Pictures</h1>
+
+                    <div>
+                        <form class="form-horizontal search-pictures-form" action="">
+
+                            <div class="form-group">
+                                <label for="searchTag" class="control-label col-sm-2" data-toggle="tooltip" title="Enter part or all of the filename">File Name&nbsp;<span class="glyphicon glyphicon-info-sign"></span></label>
+                                <div class="col-sm-10">
+                                    <input type="text" class="form-control" id="searchTag" name="tag">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="searchStartDate" class="control-label col-sm-2">Start Date</label>
+                                <div class="col-sm-4">
+                                    <div class="input-group date datetime-picker" id="searchStartDateWrapper">
+                                        <input type="text" class="form-control" id="searchStartDate" name="searchStartDate">
+                                        <span class="input-group-addon">
+                                            <span class="glyphicon glyphicon-calendar"></span>
+                                        </span>
+                                    </div>
+                                </div>
+                                <label for="searchEndDate" class="control-label col-sm-2" >End Date</label>
+                                <div class="col-sm-4">
+                                    <div class="input-group date datetime-picker" id="searchEndDateWrapper">
+                                        <input type="text" class="form-control" id="searchEndDate" name="searchEndDate">
+                                        <span class="input-group-addon">
+                                            <span class="glyphicon glyphicon-calendar"></span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <div class="col-sm-2 col-sm-push-1">
+                                    <input type="hidden" name="submit" value="1">
+                                    <button class="btn btn-primary">Search</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="no-search-results" style="display: none">
+                        No Search Results
+                    </div>
+
+                    <div class="search-results" style="display: none">
+                        <table class="table table-striped table-hover search-results-table">
+                            <thead>
+                            <tr>
+                                <th>Link</th>
+                                <th>Image</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+
+
+        </div>
     </div>
+
+    <script type="text/lodash-template" id="existing-notification-record-row-tpl">
+        <tr>
+            <th><%- email %></th>
+            <th><%- throttleMinutes %></th>
+            <th><%- startDate %></th>
+            <th><%- endDate %></th>
+            <th><%- dailyStartTime %></th>
+            <th><%- dailyEndTime %></th>
+            <th><button class="btn btn-danger delete-record" data-record-id="<%- id %>">Delete</button></th>
+            <th>
+                <div class="btn-group" data-toggle="buttons">
+                    <label class="btn <%- stfuBtnClass %> <%- stfuEnabled %>">
+                        <input type="radio" class="stfu-enabled-button" name="stfu-<%- id %>" value="1" data-record-id="<%- id %>"> <small>On</small>
+                    </label>
+
+                    <label class="btn <%- stfuBtnClass %> <%- stfuDisabled %> disabled-button">
+                        <input type="radio" name="stfu-<%- id %>" value="0" data-record-id="<%- id %>"> <small>Off</small>
+                    </label>
+                </div>
+            </th>
+        </tr>
+    </script>
+
+    <script type="text/lodash-template" id="picture-search-results-row-tpl">
+        <tr>
+            <th><small><a href="<%- url %>" target="_blank"><%- fileName %></a></small></th>
+            <th class="img-col"></th>
+        </tr>
+    </script>
+
+    <script src="bower_components/lodash/lodash.min.js"></script>
+    <script src="bower_components/jquery/dist/jquery.min.js"></script>
+    <script src="bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+    <script src="bower_components/moment/min/moment.min.js"></script>
+    <script src="bower_components/eonasdan-bootstrap-datetimepicker/build/js/bootstrap-datetimepicker.min.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/live-tab.js"></script>
+    <script src="js/notifications-tab.js"></script>
+    <script src="js/search-tab.js"></script>
+
+
 </body>
 </html>

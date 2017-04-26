@@ -9,6 +9,7 @@ import cloudinary
 import cloudinary.uploader
 import cloudinary.api
 import sqlite3
+from flask import Flask,abort,request,redirect
 
 from tempfile import NamedTemporaryFile
 
@@ -207,8 +208,11 @@ def sendNotificationEmail(email):
         receivers = [email]
 
         message = """
-        Camera activity detected
-        """
+        Camera activity detected.
+        View Camera Live: %s#live
+        View Activity Image: %s#search-pictures
+        
+        """ % (request.url_root, request.url_root)
         smtpObj = smtplib.SMTP('localhost')
         return smtpObj.sendmail(sender, receivers, message)
 

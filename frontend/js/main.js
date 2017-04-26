@@ -1,5 +1,6 @@
 var piCam = window.piCam || {};
 piCam.piHost = "";
+piCam.fileStoreHost = "http://104.233.111.80";
 // piCam.piHost = "http://localhost";
 
 $(document).ready(function(){

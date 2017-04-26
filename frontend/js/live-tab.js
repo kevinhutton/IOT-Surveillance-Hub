@@ -17,7 +17,7 @@ $(function setupLiveTabBehavior() {
 
     function loadLatestPic(doAnimationEffect) {
         $.get({
-            url: "http://104.233.111.80/file-store/search.php",
+            url: piCam.fileStoreHost + "/file-store/search.php",
             data: {
                 limit: 1,
                 streamName: streamName
