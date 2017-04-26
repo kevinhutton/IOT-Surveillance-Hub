@@ -131,6 +131,11 @@ def tttt():
     common.notifySubscribersOfCameraActivity()
     return json.dumps({'success': True})
 
+@app.route('/admin/test-email',methods=['GET'])
+def testEmail():
+    common.sendNotificationEmail("rehfeldchris@gmail.com")
+    return json.dumps({'success': True})
+
 
 if __name__ == '__main__':
     app.debug = True

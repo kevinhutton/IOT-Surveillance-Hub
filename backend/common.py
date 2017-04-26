@@ -20,7 +20,8 @@ cloudinary.config(
 )
 # dbLocation = 'iot-project.db'
 dbLocation = '/var/lib/iot-project/iot-project.db'
-mockEmailSend = True
+mockEmailSend = False
+# mockEmailSend = True
 
 def take_picture(tag=None):
     tmpFile = NamedTemporaryFile()
@@ -212,6 +213,7 @@ def sendNotificationEmail(email):
         View Activity Image: %s#search-pictures
         
         """ % (request.url_root, request.url_root)
+
         smtpObj = smtplib.SMTP('localhost')
         return smtpObj.sendmail(sender, receivers, message)
 
