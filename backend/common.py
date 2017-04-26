@@ -214,7 +214,7 @@ def sendNotificationEmail(email):
         
         """ % (request.url_root, request.url_root)
 
-        smtpObj = smtplib.SMTP('localhost')
+        smtpObj = smtplib.SMTP('localhost',1025)
         return smtpObj.sendmail(sender, receivers, message)
 
 def emailHasNotBeenEmailedTooRecently(email, minimumMinutes):
