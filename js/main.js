@@ -1,6 +1,6 @@
 var piCam = window.piCam || {};
 piCam.piHost = "https://797f6e7c71.dataplicity.io";
-piCam.fileStoreHost = "http://104.233.111.80";
+piCam.fileStoreHost = "https://cors-anywhere.herokuapp.com/http://104.233.111.80";
 // piCam.piHost = "http://localhost";
 
 $(document).ready(function(){
