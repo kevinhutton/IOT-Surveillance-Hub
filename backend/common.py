@@ -17,7 +17,7 @@ dbLocation = '/var/lib/iot-project/iot-project.db'
 
 def take_picture(tag=None):
     tmpFile = NamedTemporaryFile()
-    os.system("raspistill -hf -o %s" % tmpFile.name)
+    os.system("raspistill -hf -vf -o %s" % tmpFile.name)
     jsonResponse = cloudinary.uploader.upload(
         tmpFile.name, tag="motion-detected")
     tmpFile.close()
