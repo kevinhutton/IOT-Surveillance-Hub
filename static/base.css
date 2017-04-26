@@ -23,3 +23,7 @@ body {
 .existing-notification-record-wrapper {
     margin: 3em 0;
 }
+
+.search-results-table img {
+    max-width: 400px;
+}
