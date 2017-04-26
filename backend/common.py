@@ -1,6 +1,8 @@
 import os
+import time
 import json
 import sys
+import urllib
 import urllib2
 import traceback
 import smtplib
@@ -9,6 +11,7 @@ import cloudinary
 import cloudinary.uploader
 import cloudinary.api
 import sqlite3
+import requests
 from flask import Flask,abort,request,redirect
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -24,14 +27,23 @@ cloudinary.config(
 dbLocation = '/var/lib/iot-project/iot-project.db'
 mockEmailSend = False
 # mockEmailSend = True
+urlRoot = "https://kevinhutton.github.io/IOT-Project/"
 
-def take_picture(tag=None):
+# uploads to both cloudinary and the homebrew place.
+# this way we can search for it later via the homebrew.
+def takeAndUploadPicture(tag, sendToCloudinary=False):
     tmpFile = NamedTemporaryFile()
     os.system("raspistill -hf -vf -o %s" % tmpFile.name)
-    jsonResponse = cloudinary.uploader.upload(
-        tmpFile.name, tag="motion-detected")
+    fileNameWithTag = "/tmp/%s-%s.jpg" % (tag, time.time())
+    os.system("cp %s %s" % (tmpFile.name, fileNameWithTag))
+    if sendToCloudinary:
+        jsonResponse = cloudinary.uploader.upload(tmpFile.name, tag=tag)
+    else:
+        jsonResponse = None
+
+    uploadFile(fileNameWithTag)
     tmpFile.close()
-    return json.dumps(jsonResponse)
+    return jsonResponse, fileNameWithTag
 
 def createBluetoothDevicesTable():
     conn = sqlite3.connect(dbLocation)
@@ -201,7 +213,7 @@ def recordEmailSent(email):
 
     return executeWithArgs(sql, (email,))
 
-def sendNotificationEmail(email):
+def sendNotificationEmail(email, fileName):
     if mockEmailSend:
         log("pretending to send email to: " + email)
         return True
@@ -218,17 +230,16 @@ def sendNotificationEmail(email):
         messagePlain = """
         Camera activity detected.
         View Camera Live: %s#live
-        View Activity Image: %s#search-pictures
+        View Activity Image: %s?tag=%s&submit=1#search-pictures
         
-        """ % (request.url_root, request.url_root)
+        """ % (urlRoot, urlRoot, urllib.quote_plus(fileName))
 
         messageHtml = """
         Camera activity detected. <br>
         <a href="%s#live">View Camera Live</a> <br>
-        <a href="%s#search-pictures">View Activity Image</a> <br>
+        <a href="%s?tag=%s&submit=1#search-pictures">View Activity Image</a> <br>
         
-        """ % (request.url_root, request.url_root)
-
+        """ % (urlRoot, urlRoot, urllib.quote_plus(fileName))
 
         # Record the MIME types of both parts - text/plain and text/html.
         part1 = MIMEText(messagePlain, 'plain')
@@ -259,12 +270,12 @@ def emailHasNotBeenEmailedTooRecently(email, minimumMinutes):
     return selectAllWithArgs(sql, (email,))[0]['cnt'] == 0
 
 # We can call this method whenever the camera detects activity. It will send any needed notifications.
-def notifySubscribersOfCameraActivity():
+def notifySubscribersOfCameraActivity(fileName):
     for row in getCurrentlyActiveNotificationRecords():
         pprint(row)
         log("")
         if emailHasNotBeenEmailedTooRecently(row['email'], row['throttleMinutes']):
-            if sendNotificationEmail(row['email']):
+            if sendNotificationEmail(row['email'], fileName):
                 recordEmailSent(row['email'])
 
 def dict_factory(cursor, row):
@@ -272,3 +283,9 @@ def dict_factory(cursor, row):
     for idx, col in enumerate(cursor.description):
         d[col[0]] = row[idx]
     return d
+
+def uploadFile(filename):
+    files = {'upfile': open(filename, 'rb')}
+    url = 'http://104.233.111.80/file-store/upload.php'
+    resp = requests.post(url, files=files)
+    return resp.status_code

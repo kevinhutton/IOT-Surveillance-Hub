@@ -3,7 +3,7 @@ $(function setupLiveTabBehavior() {
     var $ctx = $('#live');
     var numPics = 5;
     var millisDelayBetweenPics = 800;
-    var streamName = "live-stream1";
+    var streamName = "live";
     var intervalId;
 
     function startContinuousLoadingOfLatestPic() {

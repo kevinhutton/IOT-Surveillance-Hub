@@ -62,8 +62,8 @@ try:
             print "Average distance of last %s readings: %s" % (counter, average)
             if average >= 92 and average <= 193:
                 print "Object detected within 92-193 cm ! Taking picture"
-                common.take_picture()
-                common.notifySubscribersOfCameraActivity()
+                cloudinaryResponse, fileName = common.takeAndUploadPicture("motion-detected")
+                common.notifySubscribersOfCameraActivity(fileName)
                 time.sleep(5)
         time.sleep(1)
 

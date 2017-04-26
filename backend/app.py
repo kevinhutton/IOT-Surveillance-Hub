@@ -24,7 +24,9 @@ def index():
 
 @app.route('/admin/take_picture',methods=['GET','POST'])
 def take_picture():
-    return common.take_picture()
+    cloudinaryResponse, fileName = common.takeAndUploadPicture("manual", True)
+    return json.dumps(cloudinaryResponse)
+
 
 # Takes pictures in a loop, uploading them as theyre taken.
 # The loop stops 2 ways. 1) we hit the numPics limit. 2) a request is made to the /stop_picture_stream url by another http request
@@ -40,8 +42,6 @@ def start_picture_stream():
     # hardcode pic file for now while testing.
     tmpFile = NamedTemporaryFile()
     filename = tmpFile.name
-    numUploadFailures = 0
-    maxUploadFailures = 3
 
     for x in range(0, numPics):
 
@@ -52,11 +52,7 @@ def start_picture_stream():
         if not liveStreamRunState[streamName]:
             break
 
-        if 201 != uploadFile(filename=filename):
-            numUploadFailures += 1
-            # Allow a few failures, but if it fails too much, we abort.
-            if numUploadFailures > maxUploadFailures:
-                return json.dumps({'success': False})
+        common.takeAndUploadPicture("live")
 
 
     return json.dumps({'success': True})
@@ -67,11 +63,7 @@ def stop_picture_stream():
     liveStreamRunState[request.args.get("streamName")] = False
     return json.dumps({'success': True})
 
-def uploadFile(filename):
-    files = {'upfile': open(filename, 'rb')}
-    url = 'http://104.233.111.80/file-store/upload.php'
-    resp = requests.post(url, files=files)
-    return resp.status_code
+
 
 # Determine the approxmate coordinates of this device via IP Gelocation
 @app.route('/admin/geolocation',methods=['GET','POST'])
@@ -136,7 +128,7 @@ def tttt():
 
 @app.route('/admin/test-email',methods=['GET'])
 def testEmail():
-    common.sendNotificationEmail("rehfeldchris@gmail.com")
+    common.sendNotificationEmail("rehfeldchris@gmail.com", "motion-detected")
     return json.dumps({'success': True})
 
 
