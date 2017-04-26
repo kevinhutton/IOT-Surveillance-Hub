@@ -241,7 +241,7 @@ def sendNotificationEmail(email):
         msg.attach(part2)
 
         # Send the message via local SMTP server.
-        s = smtplib.SMTP('localhost')
+        s = smtplib.SMTP('localhost', 1025)
         # sendmail function takes 3 arguments: sender's address, recipient's address
         # and message to send - here it is sent as one string.
         success = s.sendmail(sender, email, msg.as_string())
