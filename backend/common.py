@@ -24,7 +24,7 @@ mockEmailSend = True
 
 def take_picture(tag=None):
     tmpFile = NamedTemporaryFile()
-    os.system("raspistill -hf -o %s" % tmpFile.name)
+    os.system("raspistill -hf -vf -o %s" % tmpFile.name)
     jsonResponse = cloudinary.uploader.upload(
         tmpFile.name, tag="motion-detected")
     tmpFile.close()
@@ -34,10 +34,9 @@ def createBluetoothDevicesTable():
     conn = sqlite3.connect(dbLocation)
     print "Opened database successfully"
     conn.execute('''CREATE TABLE BluetoothDevices 
-	       (ID INT PRIMARY KEY     NOT NULL,
-	       MAC           TEXT    NOT NULL,
-	       DEVICENAME          TEXT     NOT NULL,
-	       DEVICETYPE       TEXT)''')
+	       (MAC           TEXT PRIMARY KEY    NOT NULL,
+	       DEVICENAME     TEXT     NOT NULL,
+	       TIMESTAMP DATETIME)''')
     print "Table created successfully"
     conn.close()
 
