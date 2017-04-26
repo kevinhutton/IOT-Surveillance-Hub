@@ -84,7 +84,7 @@ def dropAllTables():
     conn = getConnection()
     cur = conn.cursor()
     tables = list(cur.execute("select name from sqlite_master where type is 'table'"))
-    cur.executescript(';'.join(["drop table if exists %s" %i for i in tables]))
+    cur.executescript(';'.join(["""drop table if exists "%s" """ % i['name'] for i in tables]))
     conn.close()
 
 def initDb():
