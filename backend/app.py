@@ -14,6 +14,7 @@ from flask import Flask,abort,request,redirect
 from flask_cors import CORS
 app = Flask(__name__)
 cors = CORS(app, resources={r"/*": {"origins": "*"}})
+from tempfile import NamedTemporaryFile
 
 liveStreamRunState = {}
 
@@ -37,12 +38,14 @@ def start_picture_stream():
     streamName = request.args.get("streamName")
     filename = "cam-stream-%s.jpg" % streamName
     # hardcode pic file for now while testing.
-    filename = "C:/Users/IBM_ADMIN/Pictures/domestic-goat.jpg"
+    tmpFile = NamedTemporaryFile()
+    filename = tmpFile.name
     numUploadFailures = 0
     maxUploadFailures = 3
 
     for x in range(0, numPics):
-        # os.system("raspistill -o %s" % filename)
+
+        os.system("raspistill -hf -vf -o %s" % filename)
         time.sleep(millisDelayBetweenPics / 1000.0)
 
         # Check for a stop command sent in another request.

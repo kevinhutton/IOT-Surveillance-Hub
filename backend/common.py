@@ -10,6 +10,8 @@ import cloudinary.uploader
 import cloudinary.api
 import sqlite3
 from flask import Flask,abort,request,redirect
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 from tempfile import NamedTemporaryFile
 
@@ -205,17 +207,46 @@ def sendNotificationEmail(email):
         return True
     else:
         sender = 'iot-camera-activity-notifier-no-reply@example.com'
-        receivers = [email]
 
-        message = """
+        # Create message container - the correct MIME type is multipart/alternative.
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = "IOT Surveillance Hub Activity Detected"
+        msg['From'] = sender
+        msg['To'] = email
+
+        # Create the body of the message (a plain-text and an HTML version).
+        messagePlain = """
         Camera activity detected.
         View Camera Live: %s#live
         View Activity Image: %s#search-pictures
         
         """ % (request.url_root, request.url_root)
 
-        smtpObj = smtplib.SMTP('localhost')
-        return smtpObj.sendmail(sender, receivers, message)
+        messageHtml = """
+        Camera activity detected. <br>
+        <a href="%s#live">View Camera Live</a> <br>
+        <a href="%s#search-pictures">View Activity Image</a> <br>
+        
+        """ % (request.url_root, request.url_root)
+
+
+        # Record the MIME types of both parts - text/plain and text/html.
+        part1 = MIMEText(messagePlain, 'plain')
+        part2 = MIMEText(messageHtml, 'html')
+
+        # Attach parts into message container.
+        # According to RFC 2046, the last part of a multipart message, in this case
+        # the HTML message, is best and preferred.
+        msg.attach(part1)
+        msg.attach(part2)
+
+        # Send the message via local SMTP server.
+        s = smtplib.SMTP('localhost')
+        # sendmail function takes 3 arguments: sender's address, recipient's address
+        # and message to send - here it is sent as one string.
+        success = s.sendmail(sender, email, msg.as_string())
+        s.quit()
+        return success
 
 def emailHasNotBeenEmailedTooRecently(email, minimumMinutes):
     sql = """

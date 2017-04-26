@@ -63,6 +63,7 @@ try:
             if average >= 92 and average <= 193:
                 print "Object detected within 92-193 cm ! Taking picture"
                 common.take_picture()
+                common.notifySubscribersOfCameraActivity()
                 time.sleep(5)
         time.sleep(1)
 
