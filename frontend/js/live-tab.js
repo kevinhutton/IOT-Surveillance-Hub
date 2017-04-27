@@ -20,7 +20,7 @@ $(function setupLiveTabBehavior() {
             url: piCam.fileStoreHost + "/file-store/search.php",
             data: {
                 limit: 1,
-                tag: streamName
+                filter: streamName
             }
         }).then(function getLatestFileNameSuccess(files) {
             if (!files || !files.length) {
