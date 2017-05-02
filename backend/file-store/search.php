@@ -11,6 +11,9 @@ $filter = isset($_GET['filter']) && strlen(trim($_GET['filter'])) ? trim($_GET['
 $minDateTime = isset($_GET['minDateTime']) && strlen(trim($_GET['minDateTime'])) ? trim($_GET['minDateTime']) : false;
 $maxDateTime = isset($_GET['maxDateTime']) && strlen(trim($_GET['maxDateTime'])) ? trim($_GET['maxDateTime']) : false;
 $limit = isset($_GET['limit']) ? (int) $_GET['limit'] : 1000;
+$deleteMatched = isset($_GET['deleteMatched']) ? (bool) $_GET['deleteMatched'] : false;
+
+
 
 // The filename has a datetime string date at the front.
 // But, the date filters passed via url may not be a full date time, eg it might only be a year, or year-month etc...
@@ -36,6 +39,12 @@ $toFileDataEntry = function($fileName) {
 $matchingFiles = array_filter(scandir(UPLOAD_STORAGE_DIR), $matchesFilters);
 rsort($matchingFiles);
 $results = array_slice($matchingFiles, 0, $limit);
+
+if ($deleteMatched) {
+    foreach ($results as $result) {
+        unlink(UPLOAD_STORAGE_DIR . '/' . $result);
+    }
+}
 
 
 echo json_encode(array_map($toFileDataEntry, $results));
