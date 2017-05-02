@@ -1,6 +1,7 @@
 import os
 import time
 import json
+import datetime
 import sys
 import urllib
 import urllib2
@@ -47,7 +48,12 @@ def takeAndUploadPicture(tag):
     os.system("raspistill --nopreview --timeout 500 -hf -vf -q 35 -w 1024 -h 768 -o %s" % tmpFile.name)
     fileNameWithTag = renameThenUploadPicture(tmpFile.name, tag)
     tmpFile.close()
-    return fileNameWithTag
+    now = datetime.datetime.now()
+    nearBy = datetime.datetime.now() - datetime.timedelta(hours = 8)
+    ymd24 = now.strftime("%Y-%m-%d %H:%M:%S")
+    ymd24NearBy = nearBy.strftime("%Y-%m-%d %H:%M:%S")
+    fileInfo = {'fileNameWithPath': fileNameWithTag, 'fileName' : os.path.basename(fileNameWithTag), 'dateTime': ymd24, 'dateTimeNearBy': ymd24NearBy}
+    return fileInfo
 
 def renameThenUploadPicture(fileName, tag):
     fileNameWithTag = "/tmp/%s-%s.jpg" % (tag, time.time())
@@ -224,17 +230,22 @@ def recordEmailSent(email):
 
     return executeWithArgs(sql, (email,))
 
-def sendNotificationEmail(email, fileName):
+def sendNotificationEmail(email, fileInfo):
     if mockEmailSend:
         log("pretending to send email to: " + email)
         return True
     else:
+        log("sending email to: " + email)
         messageHtml = """
         Camera activity detected. <br>
         <a href="%s#live">View Camera Live</a> <br>
         <a href="%s?tag=%s&submit=1#search-pictures">View Activity Image</a> <br>
+        <a href="%s?tag=%s&searchStartDate=%s&submit=1#search-pictures">View Images Taken Near %s</a> <br>
         
-        """ % (urlRoot, urlRoot, urllib.quote_plus(fileName))
+        """ % (
+            urlRoot,
+            urlRoot, urllib.quote_plus(fileInfo['fileName']),
+            urlRoot, urllib.quote_plus("motion-detected"), urllib.quote_plus(fileInfo['dateTimeNearBy']), fileInfo['dateTimeNearBy'])
         sender = 'iot-camera-activity-notifier-no-reply@example.com'
         params = {'subject': "IOT Surveillance Hub Activity Detected", 'from': sender, 'to': email, 'message': messageHtml}
         url = 'http://104.233.111.80/file-store/email.php'
@@ -252,12 +263,10 @@ def emailHasNotBeenEmailedTooRecently(email, minimumMinutes):
     return selectAllWithArgs(sql, (email,))[0]['cnt'] == 0
 
 # We can call this method whenever the camera detects activity. It will send any needed notifications.
-def notifySubscribersOfCameraActivity(fileName):
+def notifySubscribersOfCameraActivity(fileInfo):
     for row in getCurrentlyActiveNotificationRecords():
-        pprint(row)
-        log("")
         if emailHasNotBeenEmailedTooRecently(row['email'], row['throttleMinutes']):
-            if sendNotificationEmail(row['email'], fileName):
+            if sendNotificationEmail(row['email'], fileInfo):
                 recordEmailSent(row['email'])
 
 def dict_factory(cursor, row):

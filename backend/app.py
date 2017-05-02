@@ -22,8 +22,8 @@ def index():
 
 @app.route('/admin/take_picture',methods=['GET','POST'])
 def take_picture():
-    fileName = common.takeAndUploadPicture("manual")
-    return json.dumps({'fileName': fileName, 'success': True})
+    fileInfo = common.takeAndUploadPicture("manual")
+    return json.dumps({'fileName': fileInfo, 'success': True})
 
 
 # Takes pictures in a loop, uploading them as theyre taken.
@@ -136,7 +136,8 @@ def tttt():
 
 @app.route('/admin/test-email',methods=['GET'])
 def testEmail():
-    common.sendNotificationEmail("rehfeldchris@gmail.com", "motion-detected")
+    fileInfo = {'fileNameWithPath': "motion-detected", 'fileName' : "motion-detected", 'dateTime': "2017-05-01 15:01:55", 'dateTimeNearBy': "2017-05-01 15:01:55"}
+    common.sendNotificationEmail("rehfeldchris@gmail.com", fileInfo)
     return json.dumps({'success': True})
 
 
