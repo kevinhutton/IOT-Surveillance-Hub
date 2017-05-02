@@ -15,6 +15,8 @@ import requests
 from flask import Flask,abort,request,redirect
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from subprocess import PIPE, Popen
+
 
 from tempfile import NamedTemporaryFile
 
@@ -29,21 +31,59 @@ mockEmailSend = False
 # mockEmailSend = True
 urlRoot = "https://kevinhutton.github.io/IOT-Project/"
 
+def shellExec(command):
+    process = Popen(args=command, stdout=PIPE, shell=True)
+    return process.communicate()[0]
+
+def raspistillCommandIsRunning():
+    return bool(shellExec("ps aux | grep '[r]aspistill' | awk '{print $2}'").strip())
+
 # uploads to both cloudinary and the homebrew place.
 # this way we can search for it later via the homebrew.
-def takeAndUploadPicture(tag, sendToCloudinary=False):
+def takeAndUploadPicture(tag):
     tmpFile = NamedTemporaryFile()
-    os.system("raspistill -hf -vf -o %s" % tmpFile.name)
+    os.system("raspistill --nopreview --timeout 1500 -hf -vf -q 75 -w 640 -h 480 -o %s" % tmpFile.name)
+    fileNameWithTag = renameThenUploadPicture(tmpFile.name, tag)
+    tmpFile.close()
+    return fileNameWithTag
+
+def takeAndUploadPictureoool(tag, sendToCloudinary=False):
+    tmpFile = NamedTemporaryFile()
+
+    t1 = time.time()
+    os.system("raspistill --nopreview --timeout 1500 -hf -vf -q 75 -w 640 -h 480 -o %s" % tmpFile.name)
+    t2 = time.time()
+    msg = "Function=%s, Time=%s\n" % ("test still", t2 - t1)
     fileNameWithTag = "/tmp/%s-%s.jpg" % (tag, time.time())
+    t1 = time.time()
     os.system("cp %s %s" % (tmpFile.name, fileNameWithTag))
+    t2 = time.time()
+    msg += "Function=%s, Time=%s\n" % ("test cp", t2 - t1)
     if sendToCloudinary:
+        t1 = time.time()
         jsonResponse = cloudinary.uploader.upload(tmpFile.name, tag=tag)
+        t2 = time.time()
+        msg += "Function=%s, Time=%s\n" % ("test cloudinary upl", t2 - t1)
+
     else:
         jsonResponse = None
 
+    t1 = time.time()
     uploadFile(fileNameWithTag)
+    t2 = time.time()
+    msg += "Function=%s, Time=%s\n" % ("test my upl", t2 - t1)
     tmpFile.close()
-    return jsonResponse, fileNameWithTag
+    ret = {'msg': msg}
+
+    return ret, fileNameWithTag
+    # return jsonResponse, fileNameWithTag
+
+def renameThenUploadPicture(fileName, tag):
+    fileNameWithTag = "/tmp/%s-%s.jpg" % (tag, time.time())
+    os.system("cp %s %s" % (fileName, fileNameWithTag))
+    uploadFile(fileNameWithTag)
+    os.system("rm -f %s" % fileNameWithTag)
+    return fileNameWithTag
 
 def createBluetoothDevicesTable():
     conn = sqlite3.connect(dbLocation)

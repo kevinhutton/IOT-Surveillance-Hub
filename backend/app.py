@@ -16,16 +16,14 @@ app = Flask(__name__)
 cors = CORS(app, resources={r"/*": {"origins": "*"}})
 from tempfile import NamedTemporaryFile
 
-liveStreamRunState = {}
-
 @app.route('/')
 def index():
     return 'IOT Surveillance Hub Backend API'
 
 @app.route('/admin/take_picture',methods=['GET','POST'])
 def take_picture():
-    cloudinaryResponse, fileName = common.takeAndUploadPicture("manual", True)
-    return json.dumps(cloudinaryResponse)
+    fileName = common.takeAndUploadPicture("manual")
+    return json.dumps({'fileName': fileName, 'success': True})
 
 
 # Takes pictures in a loop, uploading them as theyre taken.
@@ -33,37 +31,48 @@ def take_picture():
 # while this request is still running, forcing this request to end early.
 @app.route('/admin/start_picture_stream',methods=['GET','POST'])
 def start_picture_stream():
-    global liveStreamRunState
-    liveStreamRunState[request.args.get("streamName")] = True
+    streamName = request.args.get("streamName")
     numPics = int(request.args.get("numPics"))
     millisDelayBetweenPics = int(request.args.get("millisDelayBetweenPics"))
-    streamName = request.args.get("streamName")
+    runTimeMillis = numPics * millisDelayBetweenPics
     filename = "cam-stream-%s.jpg" % streamName
     # hardcode pic file for now while testing.
     tmpFile = NamedTemporaryFile()
     filename = tmpFile.name
+    outputFile = "/dev/null"
 
-    for x in range(0, numPics):
 
-        os.system("raspistill -hf -vf -o %s" % filename)
+    # Tell camera to run for runTimeMillis, taking a pic every millisDelayBetweenPics, storing/overwriting the latest result into filename
+    cmd = "raspistill -t %d -tl %d -o /tmp/img-increment.jpg -l %s -hf -vf -q 75 -w 640 -h 480" % (runTimeMillis, millisDelayBetweenPics, filename)
+    # Make the command run as a background task, returning immediately, giving us the pid.
+    # This way, we can loop and upload while it keeps taking more pictures in the background.
+    bgTaskCommand = "%s > %s 2>&1 & echo $!" % (cmd, outputFile)
+    raspPiStillCmdPid = common.shellExec(bgTaskCommand).strip()
+
+
+    while True:
+
+        # https://www.raspberrypi.org/documentation/raspbian/applications/camera.md
+        # os.system("raspistill -t 6000 -tl 1000 -o /tmp/image_num_today.jpg -l %s -hf -vf -q 75 -w 640 -h 480 &" % filename)
+
+        # os.system("raspistill -hf -vf -q 75 -w 640 -h 480 -o %s" % filename)
+        # os.system("raspistill -hf -vf -o %s" % filename)
         time.sleep(millisDelayBetweenPics / 1000.0)
 
-        # Check for a stop command sent in another request.
-        if not liveStreamRunState[streamName]:
+        # Check if the command is done, either by itself, or from being killed by another request.
+        if not common.raspistillCommandIsRunning():
             break
 
-        common.takeAndUploadPicture("live")
+        common.log("up "+filename)
+        common.renameThenUploadPicture(filename, streamName)
+        # common.uploadFile(filename)
 
-
-    return json.dumps({'success': True})
+    return json.dumps({'success': True, 'ret': raspPiStillCmdPid})
 
 @app.route('/admin/stop_picture_stream',methods=['GET','POST'])
 def stop_picture_stream():
-    global liveStreamRunState
-    liveStreamRunState[request.args.get("streamName")] = False
+    common.shellExec("kill $(ps aux | grep '[r]aspistill' | awk '{print $2}')")
     return json.dumps({'success': True})
-
-
 
 # Determine the approxmate coordinates of this device via IP Gelocation
 @app.route('/admin/geolocation',methods=['GET','POST'])
@@ -134,5 +143,6 @@ def testEmail():
 
 if __name__ == '__main__':
     app.debug = True
+    app.run(threaded=True)
     app.run(port=80)
 
