@@ -239,8 +239,8 @@ def sendNotificationEmail(email, fileInfo):
         messageHtml = """
         Camera activity detected. <br>
         <a href="%s#live">View Camera Live</a> <br>
-        <a href="%s?tag=%s&submit=1#search-pictures">View Activity Image</a> <br>
-        <a href="%s?tag=%s&searchStartDate=%s&submit=1#search-pictures">View Images Taken Near %s</a> <br>
+        <a href="%s?tag=%s&submit=1#search-pictures">View Image That Triggered Alert</a> <br>
+        <a href="%s?tag=%s&searchStartDate=%s&submit=1#search-pictures">View All Images Taken Near The Trigger %s</a> <br>
         
         """ % (
             urlRoot,
