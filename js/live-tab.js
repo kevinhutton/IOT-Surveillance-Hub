@@ -58,7 +58,7 @@ $(function setupLiveTabBehavior() {
                 millisDelayBetweenPics: millisDelayBetweenPics,
                 streamName: streamName
             }
-        });
+        }).always(stopContinuousLoadingOfLatestPic);
     });
 
     $('#stop-live-stream').click(function() {

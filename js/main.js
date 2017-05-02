@@ -4,15 +4,54 @@ piCam.fileStoreHost = "https://cors-anywhere.herokuapp.com/http://104.233.111.80
 // piCam.piHost = "http://localhost";
 
 $(document).ready(function(){
+    var streamName = "manual";
+    var $ctx = $('#take-picture');
+
     console.log("Page Loaded");
     $("#take-picture-button").click(function(){
         console.log("Button Clicked");
         var backendAPI = piCam.piHost + "/admin/take_picture";
         $.getJSON(backendAPI, function (data) {
-            console.log(data);
-            $( "<img>" ).attr( "src", data.url ).appendTo( "#most-recent-photo" );
+            // console.log(data);
+            // $("#most-recent-photo").empty();
+            // $( "<img>" ).attr( "src", data.url ).appendTo( "#most-recent-photo" );
+            loadLatestPic(true);
         });
     });
+
+    function loadLatestPic(doAnimationEffect) {
+        $.get({
+            url: piCam.fileStoreHost + "/file-store/search.php",
+            data: {
+                limit: 1,
+                filter: streamName
+            }
+        }).then(function getLatestFileNameSuccess(files) {
+            if (!files || !files.length) {
+                return;
+            }
+
+            // Preload the image so we don't slide it in before it's ready.
+            var url = files[0].url;
+            var img = new Image();
+            img.onload = function () {
+                // Make the img elem.
+                var $img = $("<img>").attr("src", url);
+
+                $(".most-recent-photo", $ctx).empty().append($img);
+
+                if (doAnimationEffect) {
+                    // Slide it in, and once it's done sliding, add more shadow.
+                    $(".photo-wrapper", $ctx)
+                        .animateCss("fadeInUp")
+                        .then(function(animName, elem) {
+                            $(elem).addClass("photo-wrapper-shadow");
+                        });
+                }
+            };
+            img.src = url;
+        });
+    }
 
 });
 
