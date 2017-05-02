@@ -43,12 +43,11 @@ def start_picture_stream():
 
 
     # Tell camera to run for runTimeMillis, taking a pic every millisDelayBetweenPics, storing/overwriting the latest result into filename
-    cmd = "raspistill -t %d -tl %d -o /tmp/img-increment.jpg -l %s -hf -vf -q 75 -w 640 -h 480" % (runTimeMillis, millisDelayBetweenPics, filename)
+    cmd = "raspistill -t %d -tl %d -o /tmp/img-increment.jpg -l %s -hf -vf -q 30 -w 640 -h 480" % (runTimeMillis, millisDelayBetweenPics, filename)
     # Make the command run as a background task, returning immediately, giving us the pid.
     # This way, we can loop and upload while it keeps taking more pictures in the background.
     bgTaskCommand = "%s > %s 2>&1 & echo $!" % (cmd, outputFile)
     raspPiStillCmdPid = common.shellExec(bgTaskCommand).strip()
-
 
     while True:
 

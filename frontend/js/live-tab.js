@@ -1,18 +1,21 @@
 $(function setupLiveTabBehavior() {
     "use strict";
     var $ctx = $('#live');
-    var numPics = 5;
-    var millisDelayBetweenPics = 800;
+    var numPics = 20;
+    var millisDelayBetweenPics = 900;
     var streamName = "live";
     var intervalId;
+    var $startLiveStreamButton = $('#start-live-stream');
 
     function startContinuousLoadingOfLatestPic() {
         intervalId = setInterval(loadLatestPic, millisDelayBetweenPics);
+        $startLiveStreamButton.prop("disabled", true);
     }
 
     function stopContinuousLoadingOfLatestPic() {
         intervalId && clearInterval(intervalId);
         intervalId = undefined;
+        $startLiveStreamButton.prop("disabled", false);
     }
 
     function loadLatestPic(doAnimationEffect) {
@@ -49,7 +52,7 @@ $(function setupLiveTabBehavior() {
         });
     }
 
-    $('#start-live-stream').click(function() {
+    $startLiveStreamButton.click(function() {
         startContinuousLoadingOfLatestPic();
         $.get({
             url: piCam.piHost + "/admin/start_picture_stream",

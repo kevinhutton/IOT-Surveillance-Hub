@@ -42,41 +42,12 @@ def raspistillCommandIsRunning():
 # this way we can search for it later via the homebrew.
 def takeAndUploadPicture(tag):
     tmpFile = NamedTemporaryFile()
-    os.system("raspistill --nopreview --timeout 1500 -hf -vf -q 75 -w 640 -h 480 -o %s" % tmpFile.name)
+    # We set the timout to 500ms, which results in a poorly exposed image. But, we do this to make it take a pic as fast as possible.
+    # 1500ms gives a better pic. We also use a low quality -q setting to keep the file size small, so uploads / downloads are speedy.
+    os.system("raspistill --nopreview --timeout 500 -hf -vf -q 35 -w 1024 -h 768 -o %s" % tmpFile.name)
     fileNameWithTag = renameThenUploadPicture(tmpFile.name, tag)
     tmpFile.close()
     return fileNameWithTag
-
-def takeAndUploadPictureoool(tag, sendToCloudinary=False):
-    tmpFile = NamedTemporaryFile()
-
-    t1 = time.time()
-    os.system("raspistill --nopreview --timeout 1500 -hf -vf -q 75 -w 640 -h 480 -o %s" % tmpFile.name)
-    t2 = time.time()
-    msg = "Function=%s, Time=%s\n" % ("test still", t2 - t1)
-    fileNameWithTag = "/tmp/%s-%s.jpg" % (tag, time.time())
-    t1 = time.time()
-    os.system("cp %s %s" % (tmpFile.name, fileNameWithTag))
-    t2 = time.time()
-    msg += "Function=%s, Time=%s\n" % ("test cp", t2 - t1)
-    if sendToCloudinary:
-        t1 = time.time()
-        jsonResponse = cloudinary.uploader.upload(tmpFile.name, tag=tag)
-        t2 = time.time()
-        msg += "Function=%s, Time=%s\n" % ("test cloudinary upl", t2 - t1)
-
-    else:
-        jsonResponse = None
-
-    t1 = time.time()
-    uploadFile(fileNameWithTag)
-    t2 = time.time()
-    msg += "Function=%s, Time=%s\n" % ("test my upl", t2 - t1)
-    tmpFile.close()
-    ret = {'msg': msg}
-
-    return ret, fileNameWithTag
-    # return jsonResponse, fileNameWithTag
 
 def renameThenUploadPicture(fileName, tag):
     fileNameWithTag = "/tmp/%s-%s.jpg" % (tag, time.time())
