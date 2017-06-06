@@ -1,4 +1,4 @@
-# IOT-Surveillance-Hub
+# IOT-Surveillance-Hub - SJSU 297 Internet of Things
 
 The objective of this project was to create an Internet controlled monitoring device which can provide visual and network surveillance for a given location/network
 
